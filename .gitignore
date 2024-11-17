@@ -1,0 +1,28 @@
+# Wykluczenie datasetów z folderu data
+/data/2019-Oct.csv
+/data/2019-Nov.csv
+/data/2019-Dec.csv
+/data/2020-Jan.csv
+/data/2020-Feb.csv
+/data/2020-Mar.csv
+/data/2020-Apr.csv
+
+# Wykluczenie datasetów z folderu data/electronic
+/data/electronic/kz.csv
+/data/electronic/events.csv
+
+# Wykluczenie datasetów z folderu data/direct_messaging
+/data/direct_messaging/campaigns.csv
+/data/direct_messaging/client_first_purchase_date.csv
+/data/direct_messaging/holidays.csv
+/data/direct_messaging/messages-demo.csv
+
+# Wykluczenie datasetów z folderu data/cosmetics
+/data/cosmetics/2019-Oct.csv
+/data/cosmetics/2019-Nov.csv
+/data/cosmetics/2019-Dec.csv
+/data/cosmetics/2020-Jan.csv
+/data/cosmetics/2020-Feb.csv
+
+# Wykluczenie datasetów z folderu data/jewelry
+/data/jewelry/jewelry.csv
