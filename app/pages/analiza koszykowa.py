@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 from sklearn.feature_extraction.text import CountVectorizer
 from mlxtend.frequent_patterns import apriori, association_rules
-
+import io  # Do obsługi plików Excel (opcjonalnie)
 
 # Tytuł strony
 st.title("📊 Analiza Koszykowa")
@@ -70,6 +70,42 @@ def format_percent(df, columns):
     return df_formatted
 
 
+# Funkcja do inicjalizacji domyślnych filtrów
+def initialize_filters(association_rules_result):
+    if 'default_filters' not in st.session_state:
+        st.session_state['default_filters'] = {
+            "antecedent_support": (
+                float(association_rules_result["Popularność produktów bazowych"].min()),
+                float(association_rules_result["Popularność produktów bazowych"].max())
+            ),
+            "consequent_support": (
+                float(association_rules_result["Popularność produktów rekomendowanych"].min()),
+                float(association_rules_result["Popularność produktów rekomendowanych"].max())
+            ),
+            "support": (
+                float(association_rules_result["Wsparcie reguły"].min()),
+                float(association_rules_result["Wsparcie reguły"].max())
+            ),
+            "confidence": (
+                float(association_rules_result["Pewność reguły"].min()),
+                float(association_rules_result["Pewność reguły"].max())
+            ),
+            "lift": (
+                float(association_rules_result["Wzrost sprzedaży"].min()),
+                float(association_rules_result["Wzrost sprzedaży"].max())
+            )
+        }
+
+    # Jeśli nie ma aktualnych filtrów, ustaw je na domyślne
+    if 'current_filters' not in st.session_state:
+        st.session_state['current_filters'] = st.session_state['default_filters'].copy()
+
+
+# Funkcja do resetowania filtrów do domyślnych wartości
+def reset_filters():
+    st.session_state['current_filters'] = st.session_state['default_filters'].copy()
+
+
 # Sekcja wyboru analizy
 analysis_type = st.selectbox(
     "🔍 Wybierz rodzaj analizy:",
@@ -103,6 +139,9 @@ if st.button("🔍 Przeprowadź analizę koszykową"):
             st.session_state['association_rules_result'] = association_rules_result
             st.session_state['analysis_done_koszykowa'] = True
 
+            # Inicjalizacja filtrów
+            initialize_filters(association_rules_result)
+
             st.success("✅ Analiza koszykowa została przeprowadzona pomyślnie!")
         else:
             st.warning(f"⚠️ Brak reguł asocjacyjnych dla {analysis_type.lower()} przy podanych parametrach.")
@@ -125,11 +164,9 @@ if 'analysis_done_koszykowa' in st.session_state and st.session_state['analysis_
     if 'selected_columns_koszykowa' not in st.session_state:
         st.session_state['selected_columns_koszykowa'] = all_columns.copy()
 
-
     # Funkcja resetująca wybór kolumn
     def reset_columns_koszykowa():
         st.session_state['selected_columns_koszykowa'] = all_columns.copy()
-
 
     # Przycisk resetujący wybór kolumn
     st.button("🔄 Przywróć wszystkie kolumny", on_click=reset_columns_koszykowa)
@@ -149,56 +186,61 @@ if 'analysis_done_koszykowa' in st.session_state and st.session_state['analysis_
         # Dodanie sekcji filtrów na głównej stronie
         st.header("🔍 Filtry poszczególnych wartości kolumn")
 
-        # Ustal zakresy dla suwaków na podstawie danych
-        min_antecedent_support = float(association_rules_result["Popularność produktów bazowych"].min())
-        max_antecedent_support = float(association_rules_result["Popularność produktów bazowych"].max())
+        # Inicjalizacja domyślnych filtrów
+        initialize_filters(association_rules_result)
+
+        # Suwak dla Popularność produktów bazowych
         antecedent_support_range = st.slider(
             "Popularność produktów bazowych (%)",
             min_value=0.0,
             max_value=100.0,
-            value=(min_antecedent_support, max_antecedent_support),
+            value=st.session_state['current_filters']['antecedent_support'],
             step=0.1
         )
+        st.session_state['current_filters']['antecedent_support'] = antecedent_support_range
 
-        min_consequent_support = float(association_rules_result["Popularność produktów rekomendowanych"].min())
-        max_consequent_support = float(association_rules_result["Popularność produktów rekomendowanych"].max())
+        # Suwak dla Popularność produktów rekomendowanych
         consequent_support_range = st.slider(
             "Popularność produktów rekomendowanych (%)",
             min_value=0.0,
             max_value=100.0,
-            value=(min_consequent_support, max_consequent_support),
+            value=st.session_state['current_filters']['consequent_support'],
             step=0.1
         )
+        st.session_state['current_filters']['consequent_support'] = consequent_support_range
 
-        min_support_val = float(association_rules_result["Wsparcie reguły"].min())
-        max_support_val = float(association_rules_result["Wsparcie reguły"].max())
+        # Suwak dla Wsparcie reguły
         support_range = st.slider(
             "Wsparcie reguły (%)",
             min_value=0.0,
             max_value=100.0,
-            value=(min_support_val, max_support_val),
+            value=st.session_state['current_filters']['support'],
             step=0.1
         )
+        st.session_state['current_filters']['support'] = support_range
 
-        min_confidence_val = float(association_rules_result["Pewność reguły"].min())
-        max_confidence_val = float(association_rules_result["Pewność reguły"].max())
+        # Suwak dla Pewność reguły
         confidence_range = st.slider(
             "Pewność reguły (%)",
             min_value=0.0,
             max_value=100.0,
-            value=(min_confidence_val, max_confidence_val),
+            value=st.session_state['current_filters']['confidence'],
             step=0.1
         )
+        st.session_state['current_filters']['confidence'] = confidence_range
 
-        min_lift = float(association_rules_result["Wzrost sprzedaży"].min())
-        max_lift = float(association_rules_result["Wzrost sprzedaży"].max())
+        # Suwak dla Wzrost sprzedaży
         lift_range = st.slider(
             "Wzrost sprzedaży",
-            min_value=min_lift,
-            max_value=max_lift,
-            value=(min_lift, max_lift),
+            min_value=0.0,
+            max_value=association_rules_result["Wzrost sprzedaży"].max(),
+            value=st.session_state['current_filters']['lift'],
             step=0.1
         )
+        st.session_state['current_filters']['lift'] = lift_range
+
+        # Przycisk do resetowania filtrów do domyślnych wartości
+        st.button("🔄 Przywróć domyślne filtry", on_click=reset_filters)
 
         # Filtracja danych na podstawie suwaków
         filtered_rules = association_rules_result[
@@ -212,7 +254,7 @@ if 'analysis_done_koszykowa' in st.session_state and st.session_state['analysis_
             (association_rules_result["Pewność reguły"] <= confidence_range[1]) &
             (association_rules_result["Wzrost sprzedaży"] >= lift_range[0]) &
             (association_rules_result["Wzrost sprzedaży"] <= lift_range[1])
-            ]
+        ]
 
         # Opcjonalne formatowanie kolumn procentowych z znakiem %
         filtered_rules_display = format_percent(filtered_rules, [
@@ -237,6 +279,7 @@ if 'analysis_done_koszykowa' in st.session_state and st.session_state['analysis_
             mime='text/csv'
         )
 
+        st.write(f"Liczba reguł po filtracji: {filtered_rules.shape[0]}")
 
     else:
         st.warning("⚠️ Wybierz przynajmniej jedną kolumnę do wyświetlenia.")
@@ -274,5 +317,3 @@ if 'analysis_done_koszykowa' in st.session_state and st.session_state['analysis_
         ### Waga reguły (zhangs_metric)
         Miara równowagi między wsparciem a pewnością reguły, pomagająca wybrać najbardziej istotne reguły.
         """)
-
-
