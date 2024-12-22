@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 from sklearn.feature_extraction.text import CountVectorizer
 from mlxtend.frequent_patterns import apriori, association_rules
-import io  # Do obsługi plików Excel (opcjonalnie)
+
 
 # Tytuł strony
 st.title("📊 Analiza Koszykowa")
