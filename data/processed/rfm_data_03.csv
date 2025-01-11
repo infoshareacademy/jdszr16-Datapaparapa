@@ -1,4 +1,4 @@
-user_id,Recency,Frequency,Monetary
+user_id,recency,frequency,monetary
 9794320,96,2,7.720000000000001
 10079204,115,2,25.810000000000002
 10280338,10,19,63.29
