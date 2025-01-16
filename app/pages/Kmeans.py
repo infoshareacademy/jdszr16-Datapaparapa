@@ -2,7 +2,7 @@ import streamlit as st
 import joblib
 import matplotlib.pyplot as plt
 import plotly.express as px
-from pathlib import Path  # Dodany import
+from pathlib import Path
 
 st.title("🔢 Klasteryzacja KMeans")
 
