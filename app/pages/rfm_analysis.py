@@ -7,7 +7,7 @@ st.write("🔍 **Załaduj plik CSV**, a następnie wybierz zakres dat i kliknij 
 
 # Sprawdzenie, czy plik został wgrany
 if 'df_sales' not in st.session_state:
-    st.warning("🚫 **Proszę wgrać plik CSV na stronie głównej lub innej podstronie.**")
+    st.warning("🚫 **Proszę wgrać plik CSV na stronie głównej.**")
     st.stop()
 
 df_sales = st.session_state['df_sales']
@@ -199,7 +199,6 @@ if st.button("🔍 Przeprowadź analizę RFM"):
     # Obliczamy RFM na przefiltrowanych danych (filtered_df)
     rfm_results = compute_rfm(filtered_df)
     st.session_state["df_rfm_results"] = rfm_results
-    st.success("Analiza RFM została przeprowadzona pomyślnie!")
 
 if "df_rfm_results" in st.session_state:
     df_RFM = st.session_state["df_rfm_results"].copy()
@@ -209,7 +208,7 @@ if "df_rfm_results" in st.session_state:
         df_RFM = df_RFM.drop(columns=['user_id'])
 
     st.subheader("📈 Wyniki analizy RFM (wybrane kolumny):")
-    # Wielokrotny wybór kolumn (multiselect)
+    # Nowa funkcjonalność: wielokrotny wybór kolumn (multiselect)
     selected_columns = st.multiselect(
         "Wybierz kolumny:",
         df_RFM.columns.tolist(),
@@ -243,26 +242,23 @@ if "df_rfm_results" in st.session_state:
     )
     st.plotly_chart(fig)
 
-    # Przygotowanie danych do KMeans
+    # Przygotowanie danych do zapisu CSV z nazwami kolumn zaczynającymi się od małej litery
     if selected_columns:
         # Tworzymy kopię wybranych kolumn
-        df_kmeans = df_RFM[selected_columns].copy()
+        df_to_save = df_RFM[selected_columns].copy()
     else:
         # Jeśli nie wybrano kolumn, zapisujemy cały DataFrame
-        df_kmeans = df_RFM.copy()
+        df_to_save = df_RFM.copy()
 
     # Funkcja do zmiany pierwszej litery kolumny na małą literę
     def lowercase_first_letter(col_name):
         return col_name[0].lower() + col_name[1:] if isinstance(col_name, str) and len(col_name) > 0 else col_name
 
     # Zmieniamy nazwy kolumn
-    df_kmeans.columns = [lowercase_first_letter(col) for col in df_kmeans.columns]
-
-    # Zapisywanie do session_state dla KMeans
-    st.session_state["df_kmeans"] = df_kmeans
+    df_to_save.columns = [lowercase_first_letter(col) for col in df_to_save.columns]
 
     # Generujemy dane CSV z nagłówkami w małych literach
-    csv_data = df_kmeans.to_csv(index=False, header=True, encoding='utf-8-sig').encode('utf-8-sig')
+    csv_data = df_to_save.to_csv(index=False, header=True, encoding='utf-8-sig').encode('utf-8-sig')
 
     st.download_button(
         label="💾 Pobierz wyniki RFM jako CSV",
@@ -270,4 +266,6 @@ if "df_rfm_results" in st.session_state:
         file_name='wyniki_rfm.csv',
         mime='text/csv',
     )
+
+st.divider()
 

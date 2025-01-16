@@ -1,42 +1,65 @@
 import streamlit as st
+import pandas as pd
 import joblib
 import matplotlib.pyplot as plt
+from sklearn.cluster import KMeans
 import plotly.express as px
-from pathlib import Path
+import plotly.graph_objects as go
+import os
 
-st.title("🔢 Klasteryzacja KMeans")
+# Funkcja do ładowania danych
+@st.cache_data
+def load_data(file_path):
+    try:
+        data = pd.read_csv(file_path)
+        return data
+    except Exception as e:
+        st.error(f"Błąd podczas ładowania danych: {e}")
+        return None
 
-# Funkcja do ładowania modelu z cache
+# Funkcja do ładowania modelu
 @st.cache_resource
 def load_model(model_path):
     try:
-        loaded_model = joblib.load(model_path)
-        return loaded_model
+        model = joblib.load(model_path)
+        return model
     except Exception as e:
-        st.error(f"Nie udało się załadować modelu: {e}")
+        st.error(f"Błąd podczas ładowania modelu: {e}")
         return None
 
-# Funkcje do wizualizacji
+# Funkcja do wizualizacji 2D klastrów
 def visualize_clusters_2d(data, labels):
     try:
-        fig, ax = plt.subplots(figsize=(10, 6))
-        scatter = ax.scatter(data['recency'], data['frequency'], c=labels, cmap='viridis', alpha=0.7)
-        legend1 = ax.legend(*scatter.legend_elements(), title="Segment")
-        ax.add_artist(legend1)
-        ax.set_xlabel("Recency")
-        ax.set_ylabel("Frequency")
-        ax.set_title("Wizualizacja klastrów (2D)")
-        st.pyplot(fig)
+        plt.figure(figsize=(10, 6))
+        plt.scatter(data['recency'], data['frequency'], c=labels, cmap='viridis', alpha=0.7)
+        plt.colorbar(label="Segment")
+        plt.xlabel("Recency")
+        plt.ylabel("Frequency")
+        plt.title("Wizualizacja klastrów (2D)")
+        st.pyplot(plt)
     except Exception as e:
         st.error(f"Błąd podczas wizualizacji klastrów 2D: {e}")
 
+# Funkcja do wizualizacji 3D klastrów statycznych
+def visualize_clusters_3d(data, labels):
+    try:
+        fig = plt.figure(figsize=(10, 8))
+        ax = fig.add_subplot(111, projection='3d')
+        scatter = ax.scatter(data['recency'], data['frequency'], data['monetary'], c=labels, cmap='viridis', alpha=0.7)
+        ax.set_xlabel("Recency")
+        ax.set_ylabel("Frequency")
+        ax.set_zlabel("Monetary")
+        ax.set_title("Wizualizacja klastrów (3D - statyczna)")
+        fig.colorbar(scatter, label="Segment")
+        st.pyplot(fig)
+    except Exception as e:
+        st.error(f"Błąd podczas wizualizacji klastrów 3D: {e}")
+
+# Funkcja do wizualizacji 3D dynamicznej
 def visualize_clusters_3d_dynamic(data, labels):
     try:
         fig = px.scatter_3d(
-            data,
-            x='recency',
-            y='frequency',
-            z='monetary',
+            data, x='recency', y='frequency', z='monetary',
             color=labels.astype(str),
             title="Wizualizacja klastrów (3D - dynamiczna)",
             labels={'color': 'Segment'}
@@ -45,6 +68,7 @@ def visualize_clusters_3d_dynamic(data, labels):
     except Exception as e:
         st.error(f"Błąd podczas dynamicznej wizualizacji klastrów 3D: {e}")
 
+# Funkcja do podsumowania klastrów
 def summarize_clusters(data, labels):
     try:
         data['Segment'] = labels
@@ -61,44 +85,57 @@ def summarize_clusters(data, labels):
         st.error(f"Błąd podczas podsumowania klastrów: {e}")
         return None
 
-# Sprawdzenie, czy dane KMeans są dostępne w session_state
-if "df_kmeans" not in st.session_state:
-    st.warning("🚫 Brak danych do klasteryzacji KMeans. Przeprowadź analizę RFM najpierw na stronie 'Analiza RFM'.")
-    st.stop()
+# Główna funkcja aplikacji
+def main():
+    st.title("Aplikacja do analizy RFM i segmentacji klientów")
+    st.sidebar.header("Konfiguracja")
 
-df_kmeans = st.session_state["df_kmeans"].copy()
+    # Ścieżki do danych
+    rfm_file = st.sidebar.text_input(
+        "Ścieżka do pliku CSV z danymi RFM", 
+        value="C:/Users/nazwa/Documents/datascience/infoshare/big_data_project/jdszr16-datapaparapa/data/processed/rfm_data_05_org.csv"
+    )
+    model_file = st.sidebar.text_input(
+        "Ścieżka do modelu K-Means", 
+        value="C:/Users/nazwa/Documents/datascience/infoshare/big_data_project/jdszr16-datapaparapa/models/model_kmeans_cosmetic_05_org.joblib"
+    )
 
-# Sprawdzenie, czy wymagane kolumny istnieją
-required_columns = ['recency', 'frequency', 'monetary']
-if not all(col in df_kmeans.columns for col in required_columns):
-    st.error("Dane nie zawierają wymaganych kolumn: recency, frequency, monetary.")
-    st.stop()
+    # Przycisk do załadowania danych i modelu
+    if st.sidebar.button("Załaduj dane i model"):
+        rfm_data = load_data(rfm_file)  # Wczytaj dane RFM
+        model = load_model(model_file)  # Wczytaj model K-Means
 
-# Ładowanie modelu KMeans
-current_dir = Path(__file__).parent
-model_path = current_dir.parent / 'models' / 'model_kmeans_cosmetic_05_org.joblib'
-loaded_model = load_model(model_path)
+        if rfm_data is not None and model is not None:
+            st.write("**Podgląd danych RFM:**")
+            st.dataframe(rfm_data.head())
 
-if loaded_model is None:
-    st.stop()
+            try:
+                # Weryfikacja obecności wymaganych kolumn
+                required_columns = ['recency', 'frequency', 'monetary']
+                if all(col in rfm_data.columns for col in required_columns):
+                    # Predykcja segmentów
+                    labels = model.predict(rfm_data[required_columns])
+                    rfm_data['Segment'] = labels
 
-# Predykcja klastrów
-try:
-    features = df_kmeans[required_columns]
-    labels = loaded_model.predict(features)
-    df_kmeans['Segment'] = labels
-    st.write("**Dane z przypisanymi segmentami:**")
-    st.dataframe(df_kmeans.head())
-except Exception as e:
-    st.error(f"Błąd podczas predykcji: {e}")
-    st.stop()
+                    st.write("**Dane z przypisanymi segmentami:**")
+                    st.dataframe(rfm_data.head())
 
-# Wizualizacje
-st.subheader("Wizualizacja klastrów (2D)")
-visualize_clusters_2d(df_kmeans, labels)
+                    # Wizualizacja
+                    st.subheader("Wizualizacja klastrów (2D)")
+                    visualize_clusters_2d(rfm_data, labels)
 
-st.subheader("Wizualizacja klastrów (3D - dynamiczna)")
-visualize_clusters_3d_dynamic(df_kmeans, labels)
+                    st.subheader("Wizualizacja klastrów (3D - statyczna)")
+                    visualize_clusters_3d(rfm_data, labels)
 
-# Podsumowanie klastrów
-summarize_clusters(df_kmeans, labels)
+                    st.subheader("Wizualizacja klastrów (3D - dynamiczna)")
+                    visualize_clusters_3d_dynamic(rfm_data, labels)
+
+                    # Podsumowanie klastrów
+                    summarize_clusters(rfm_data, labels)
+                else:
+                    st.error(f"Dane nie zawierają wymaganych kolumn: {required_columns}")
+            except Exception as e:
+                st.error(f"Błąd podczas predykcji lub wizualizacji: {e}")
+
+if __name__ == "__main__":
+    main()
