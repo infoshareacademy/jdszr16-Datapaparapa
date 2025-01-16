@@ -2,11 +2,11 @@ import streamlit as st
 import joblib
 import matplotlib.pyplot as plt
 import plotly.express as px
-from pathlib import Path
+import os
 
 st.title("🔢 Klasteryzacja KMeans")
 
-# Funkcja do ładowania modelu z cache
+# Funkcja do ładowania modelu
 @st.cache_resource
 def load_model(model_path):
     try:
@@ -75,8 +75,7 @@ if not all(col in df_kmeans.columns for col in required_columns):
     st.stop()
 
 # Ładowanie modelu KMeans
-current_dir = Path(__file__).parent
-model_path = current_dir.parent / 'models' / 'model_kmeans_cosmetic_05_org.joblib'
+model_path = '../models/model_kmeans_cosmetic_05_org.joblib'  # Zmieniona ścieżka na względną
 loaded_model = load_model(model_path)
 
 if loaded_model is None:
@@ -100,4 +99,5 @@ visualize_clusters_2d(df_kmeans, labels)
 st.subheader("Wizualizacja klastrów (3D - dynamiczna)")
 visualize_clusters_3d_dynamic(df_kmeans, labels)
 
+# Podsumowanie klastrów
 summarize_clusters(df_kmeans, labels)
