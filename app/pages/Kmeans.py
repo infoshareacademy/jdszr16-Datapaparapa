@@ -75,8 +75,12 @@ if not all(col in df_kmeans.columns for col in required_columns):
     st.stop()
 
 # Ładowanie modelu KMeans
-model_path = '../models/model_kmeans_cosmetic_05_org.joblib'  # Zmieniona ścieżka na względną
+model_path = 'models/model_kmeans_cosmetic_05_org.joblib'
+if not os.path.exists(model_path):
+    raise FileNotFoundError(f"Model file not found at {model_path}")
+
 loaded_model = load_model(model_path)
+
 
 if loaded_model is None:
     st.stop()
