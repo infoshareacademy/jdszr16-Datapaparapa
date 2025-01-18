@@ -1,0 +1,27 @@
+
+site_name: Analiza E-commerce
+docs_dir: docs
+
+theme:
+  name: readthedocs
+nav:
+  - Strona główna: index.md
+  - Repozytorium:
+      - Struktura repozytorium: repo_structure.md
+      - Diagram przepływu danych: data_flow.md
+  - Analiza danych:
+      - Wstępne przetwarzanie danych: preprocessing.md
+      - Eksploracyjna analiza danych (EDA): eda.md
+      - Inżynieria cech: feature_engineering.md
+  - Modele analizy:
+      - Analiza RFM: rfm_analysis.md
+      - Klasteryzacja K-Means:
+          - Opis procesu: k_means.md
+          - Wersja 1: kmeans_cosmetic_02.md
+          - Wersja 2: kmeans_cosmetic_03.md
+          - Wersja 3: kmeans_cosmetic_05_org.md
+      - Analiza koszykowa: market_basket_analysis.md
+  - Wizualizacje:
+      - Wyniki analizy: visualization.md
+      - Interaktywna aplikacja Streamlit: streamlit_app.md
+  - Notatki i dokumentacja: notebooks.md
