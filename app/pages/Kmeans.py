@@ -81,7 +81,6 @@ if not os.path.exists(model_path):
 
 loaded_model = load_model(model_path)
 
-
 if loaded_model is None:
     st.stop()
 
